@@ -1,5 +1,9 @@
 # DataPulse
 
+[![DataPulse checks](https://github.com/syrine291100/Datapulse/actions/workflows/ci.yml/badge.svg)](https://github.com/syrine291100/Datapulse/actions/workflows/ci.yml)
+
+**[Ouvrir la démo en ligne](https://datapulse-api.streamlit.app/)** · [Documentation API](https://datapulse-api-2v5t.onrender.com/docs)
+
 Application d’analyse de ventes avec pipeline d’import CSV, contrôle de qualité, stockage SQL et tableau de bord interactif.
 
 **Python · pandas · FastAPI · SQLAlchemy · PostgreSQL · Streamlit · Plotly · Docker**
@@ -18,7 +22,12 @@ Application d’analyse de ventes avec pipeline d’import CSV, contrôle de qua
 
 ## Démarrer sous Windows
 
-Prérequis : Python 3.12. Extraire le ZIP et ouvrir un terminal **à la racine de DataPulse**.
+Prérequis : Python 3.12 et Git. Cloner le dépôt, puis ouvrir un terminal **à la racine de DataPulse**.
+
+```powershell
+git clone https://github.com/syrine291100/Datapulse.git
+cd Datapulse
+```
 
 ```powershell
 py -3.12 -m venv .venv
@@ -101,11 +110,37 @@ docker compose up --build
 
 Dashboard : http://localhost:8501. API : http://localhost:8000. PostgreSQL reste accessible uniquement aux services Docker et conserve ses données dans un volume. Le mot de passe fourni dans Compose est exclusivement destiné au développement local.
 
-## Déploiement à préparer
+## Déploiement en ligne
 
-Cette version est prête pour les essais locaux ; aucune démo publique n’est encore configurée.
+| Composant | Hébergement | Adresse |
+|---|---|---|
+| Dashboard | Streamlit Community Cloud | https://datapulse-api.streamlit.app/ |
+| API FastAPI | Render | https://datapulse-api-2v5t.onrender.com |
+| Base PostgreSQL | Neon | Connexion privée côté API |
 
-Pour héberger l’application : base PostgreSQL chez Neon, API Python chez Render et dashboard sur un hébergeur Streamlit. Définir `DATABASE_URL` et `IMPORT_API_KEY` pour l’API, `API_URL` et la même clé pour le dashboard. Les secrets restent côté serveur et ne doivent jamais être commités.
+### API sur Render
+
+- Branche : `main`, répertoire racine vide, runtime Python.
+- Version Python : `PYTHON_VERSION=3.12.8`.
+- Build : `pip install -r requirements.txt`.
+- Démarrage : `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`.
+- Variables : `DATABASE_URL` (connexion PostgreSQL Neon) et `IMPORT_API_KEY`.
+- Vérification : [`/health`](https://datapulse-api-2v5t.onrender.com/health).
+
+### Dashboard sur Streamlit Community Cloud
+
+Dépôt `syrine291100/Datapulse`, branche `main`, fichier `frontend/app.py`, Python 3.12.
+
+Dans **Settings → Secrets**, définir les valeurs au format TOML :
+
+```toml
+API_URL = "https://datapulse-api-2v5t.onrender.com"
+IMPORT_API_KEY = "votre-cle-privee"
+```
+
+Utiliser la même clé que sur Render. Les secrets restent côté serveur et ne doivent jamais être commités.
+
+Pour découvrir la démo, ouvrir le tableau de bord, modifier la période ou les catégories et consulter l’historique. Le fichier `data/sales_demo.csv` contient 180 ventes fictives ; sa réimportation est bloquée si ces identifiants existent déjà.
 
 Le dashboard est une démonstration **partagée**, sans comptes utilisateurs : tous les visiteurs accèdent aux mêmes ventes. N’utiliser que des données fictives. Avant une utilisation métier, ajouter authentification et isolation par organisation, limites d’usage, pagination, migrations Alembic et journal d’audit. Cette V1 crée le schéma au démarrage avec SQLAlchemy et ne gère pas les évolutions de schéma.
 
@@ -114,6 +149,9 @@ Le dashboard est une démonstration **partagée**, sans comptes utilisateurs : t
 - 15 tests API et validation réussis sur Python 3.12 / SQLite.
 - Contrôle Ruff réussi.
 - Vérification Streamlit réussie avec le CSV de démonstration.
-- PostgreSQL / Docker et le déploiement public restent à vérifier dans leurs environnements respectifs.
+- API publique vérifiée : `/health` renvoie HTTP 200 et `{"status":"ok"}`.
+- Lecture de 180 ventes confirmée via l’API déployée, configurée avec PostgreSQL Neon.
+- Dashboard déployé sur Streamlit Community Cloud ; vérification visuelle complète du site public à confirmer.
+- Docker reste à vérifier dans son environnement.
 
 Les versions directes sont figées dans `requirements.txt` et `requirements-dev.txt`. `requirements-dev.lock.txt` documente l’ensemble de l’environnement Linux utilisé pour la vérification ; les instructions Windows utilisent les dépendances directes.
